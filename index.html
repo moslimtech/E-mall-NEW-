@@ -1,72 +1,51 @@
 <!DOCTYPE html>
-<html dir="rtl" lang="ar">
+<html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>E-mall - المنصة التجارية</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
-    <style>
-        .store-card {
-            border-top: 4px solid;
-            transition: all 0.3s;
-        }
-        .status-open { border-color: #28a745; }
-        .status-prayer { border-color: #ffc107; }
-        .status-closed { border-color: #dc3545; }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E-mall - المركز التجاري الإلكتروني</title>
+    <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-        <div class="container">
-            <a class="navbar-brand" href="#">E-mall</a>
-            <div>
-                <a href="register.html" class="btn btn-light me-2">تسجيل محل جديد</a>
-                <a href="login.html" class="btn btn-outline-light">تسجيل الدخول</a>
-            </div>
-        </div>
-    </nav>
-
-    <div class="container py-5">
-        <div class="row" id="storesContainer">
-            <!-- سيتم تعبئتها بالبيانات -->
-        </div>
-    </div>
-
+    <header>
+        <nav>
+            <div class="logo">E-mall</div>
+            <ul>
+                <li><a href="login.html">تسجيل الدخول</a></li>
+                <li><a href="register.html">تسجيل محل</a></li>
+            </ul>
+        </nav>
+    </header>
+    
+    <main>
+        <section class="hero">
+            <h1>مرحبًا بكم في E-mall</h1>
+            <p>منصة التسوق المحلية الأولى في منطقتك</p>
+        </section>
+        
+        <section class="featured-stores">
+            <!-- سيتم ملؤها بالمتاجر عبر JavaScript -->
+        </section>
+    </main>
+    
+    <footer>
+        <p>© 2023 E-mall. جميع الحقوق محفوظة.</p>
+    </footer>
+    
+    <script src="js/main.js"></script>
     <script>
-        async function loadStores() {
-            const response = await fetch('URL_GOOGLE_SCRIPT', {
-                method: 'POST',
-                body: JSON.stringify({ action: "getPublicStores" })
-            });
-            const stores = await response.json();
-            
-            let html = '';
+        // جلب المتاجر المميزة وعرضها
+        google.script.run.withSuccessHandler(function(stores) {
+            const container = document.querySelector('.featured-stores');
             stores.forEach(store => {
-                let statusClass = '';
-                if (store.status === "مفتوح الان") statusClass = "status-open";
-                else if (store.status === "مغلق للصلاة") statusClass = "status-prayer";
-                else statusClass = "status-closed";
-                
-                html += `
-                    <div class="col-md-4 mb-4">
-                        <div class="card store-card h-100 ${statusClass}">
-                            <div class="card-body">
-                                <h5>${store.name}</h5>
-                                <p class="text-muted">
-                                    <i class="fas fa-map-marker-alt"></i> ${store.city} - ${store.area}
-                                </p>
-                                <a href="store.html?id=${store.id}" class="btn btn-sm btn-primary">
-                                    عرض المحل
-                                </a>
-                            </div>
-                        </div>
+                container.innerHTML += `
+                    <div class="store-card">
+                        <h3>${store.اسم_المكان}</h3>
+                        <p>${store.المدينة}</p>
                     </div>
                 `;
             });
-            
-            document.getElementById('storesContainer').innerHTML = html;
-        }
-        
-        window.onload = loadStores;
+        }).getFeaturedStores();
     </script>
 </body>
 </html>
