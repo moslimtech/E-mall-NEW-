@@ -64,9 +64,6 @@
       </select>
       <select id="store-city" onchange="loadRegions()">
         <option value="">اختر المدينة</option>
-        <option value="1">السادات</option>
-        <option value="2">اكتوبر</option>
-        <option value="3">اون لاين</option>
       </select>
       <select id="store-region">
         <option value="">اختر المنطقة</option>
@@ -78,24 +75,13 @@
       <button onclick="getCurrentLocation()">📍 تحديد موقعي تلقائيًا</button>
       <select id="store-floor">
         <option value="">اختر الدور</option>
-        <option value="بدروم">بدروم</option>
-        <option value="ارضي">ارضي</option>
-        <option value="اول">اول</option>
-        <option value="ثاني">ثاني</option>
-        <option value="ثالث">ثالث</option>
-        <option value="رابع">رابع</option>
       </select>
       <input type="file" id="logo-file" accept="image/*">
       <select id="store-status">
         <option value="">اختر حالة المكان</option>
-        <option value="مفتوح الان">مفتوح الان</option>
-        <option value="مغلق للصلاة">مغلق للصلاة</option>
-        <option value="مغلق">مغلق</option>
       </select>
       <select id="store-delivery">
         <option value="">يوجد خدمة توصيل؟</option>
-        <option value="يوجد توصيل">يوجد توصيل</option>
-        <option value="لا يوجد توصيل">لا يوجد توصيل</option>
       </select>
       <button onclick="submitRegistration()">تسجيل الحساب</button>
       <div id="store-error" class="error"></div>
@@ -112,17 +98,45 @@
           select.innerHTML += `<option value="${item["معرف نوع النشاط"]}">${item["اسم نوع النشاط"]}</option>`;
         });
       });
+
+      fetch(`${API}?action=getCities`).then(res => res.json()).then(data => {
+        const select = document.getElementById("store-city");
+        data.forEach(item => {
+          select.innerHTML += `<option value="${item["IDالمدينة"]}">${item["المدينة"]}</option>`;
+        });
+      });
+
+      fetch(`${API}?action=getStatuses`).then(res => res.json()).then(data => {
+        const select = document.getElementById("store-status");
+        data.forEach(item => {
+          select.innerHTML += `<option value="${item["حالة المكان"]}">${item["حالة المكان"]}</option>`;
+        });
+      });
+
+      fetch(`${API}?action=getFloors`).then(res => res.json()).then(data => {
+        const select = document.getElementById("store-floor");
+        data.forEach(item => {
+          select.innerHTML += `<option value="${item["الدور"]}">${item["الدور"]}</option>`;
+        });
+      });
+
+      fetch(`${API}?action=getDeliveryOptions`).then(res => res.json()).then(data => {
+        const select = document.getElementById("store-delivery");
+        data.forEach(item => {
+          select.innerHTML += `<option value="${item["التوصيل"]}">${item["التوصيل"]}</option>`;
+        });
+      });
     }
 
     function loadRegions() {
       const cityId = document.getElementById("store-city").value;
       const regionSelect = document.getElementById("store-region");
       regionSelect.innerHTML = '<option value="">اختر المنطقة</option>';
-
-      if (cityId == '1') {
-        regionSelect.innerHTML += '<option value="299cfced">الاولي</option>';
-        regionSelect.innerHTML += '<option value="3ea671ca">32</option>';
-      }
+      fetch(`${API}?action=getRegions&cityId=${cityId}`).then(res => res.json()).then(data => {
+        data.forEach(item => {
+          regionSelect.innerHTML += `<option value="${item["IDالمنطقة"]}">${item["المنطقة"]}</option>`;
+        });
+      });
     }
 
     function goToStoreSection() {
