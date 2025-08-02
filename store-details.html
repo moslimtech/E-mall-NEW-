@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>تفاصيل المكان</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+    body {
+      font-family: 'Cairo', sans-serif;
+      background-color: #f2f2f2;
+      padding: 20px;
+    }
+    .store-details {
+      background: #fff;
+      border-radius: 10px;
+      padding: 20px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+    .store-details img {
+      width: 120px;
+      height: 120px;
+      border-radius: 10px;
+      object-fit: cover;
+      margin-bottom: 15px;
+    }
+    .ads {
+      margin-top: 30px;
+    }
+    .ad-card {
+      background: #fafafa;
+      border: 1px solid #ddd;
+      padding: 10px;
+      margin-bottom: 10px;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div class="store-details" id="store-details">
+    <p>جاري تحميل بيانات المكان...</p>
+  </div>
+
+  <div class="ads">
+    <h3>الإعلانات:</h3>
+    <div id="ads-list">جاري التحميل...</div>
+  </div>
+
+  <script>
+    const API_URL = "https://script.google.com/macros/s/AKfycbwcyqY4HfjGUGLAtslLd3m-bXh3pBNz6TsuWpjCXpJpJBzL_ElbaGCi-pjOiISSXKXtkg/exec";
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const storeId = urlParams.get("id");
+
+    fetch(`${API_URL}?action=getStores`)
+      .then(res => res.json())
+      .then(stores => {
+        const store = stores.find(s => s["معرف المكان"] === storeId);
+        if (!store) {
+          document.getElementById("store-details").innerHTML = "<p>لم يتم العثور على هذا المكان.</p>";
+          return;
+        }
+
+        document.getElementById("store-details").innerHTML = `
+          <img src="${store["رابط صورة شعار المكان"]}" alt="${store["اسم المكان"]}">
+          <h2>${store["اسم المكان"]}</h2>
+          <p><strong>رقم التواصل:</strong> ${store["رقم التواصل"]}</p>
+          <p><strong>الواتساب:</strong> <a href="${store["رابط واتساب"]}" target="_blank">تواصل واتساب</a></p>
+          <p><strong>الإيميل:</strong> ${store["الإيميل"]}</p>
+          <p><strong>الموقع:</strong> ${store["الموقع"]}</p>
+          <p><strong>الدور:</strong> ${store["الدور"]}</p>
+          <p><strong>حالة المكان:</strong> ${store["حالة المكان الان"]}</p>
+        `;
+      });
+
+    fetch(`${API_URL}?action=getStoreAds&storeId=${storeId}`)
+      .then(res => res.json())
+      .then(ads => {
+        const adsList = document.getElementById("ads-list");
+        if (ads.length === 0) {
+          adsList.innerHTML = "<p>لا توجد إعلانات حالياً.</p>";
+          return;
+        }
+
+        adsList.innerHTML = "";
+        ads.forEach(ad => {
+          adsList.innerHTML += `
+            <div class="ad-card">
+              <h4>${ad["عنوان الاعلان"] || "إعلان"}</h4>
+              <p>${ad["وصف الاعلان"] || "بدون وصف"}</p>
+            </div>
+          `;
+        });
+      });
+  </script>
+</body>
+</html>
