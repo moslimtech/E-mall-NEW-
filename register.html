@@ -8,38 +8,46 @@
   <style>
     body {
       font-family: 'Cairo', sans-serif;
-      background-color: #f9f9f9;
+      background-color: #f2f2f2;
       display: flex;
       justify-content: center;
-      padding: 20px;
+      padding: 30px;
     }
     .register-box {
       background: white;
-      padding: 30px;
+      padding: 25px;
       border-radius: 12px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
       width: 100%;
-      max-width: 500px;
+      max-width: 550px;
     }
     input, select, button {
       width: 100%;
       padding: 10px;
-      margin: 8px 0;
+      margin-top: 10px;
       border: 1px solid #ccc;
       border-radius: 6px;
+      font-size: 16px;
     }
     button {
       background-color: #28a745;
       color: white;
-      border: none;
+      font-weight: bold;
       cursor: pointer;
+    }
+    button:hover {
+      background-color: #218838;
     }
     .hidden {
       display: none;
     }
     .error {
       color: red;
-      margin-top: 5px;
+      margin-top: 10px;
+    }
+    .success {
+      color: green;
+      margin-top: 10px;
     }
   </style>
 </head>
@@ -47,7 +55,7 @@
   <div class="register-box">
     <h2>إنشاء حساب جديد</h2>
 
-    <!-- ✅ المرحلة الأولى: بيانات المستخدم -->
+    <!-- بيانات المستخدم -->
     <div id="user-section">
       <input type="text" id="user-name" placeholder="الاسم بالكامل">
       <input type="email" id="user-email" placeholder="البريد الإلكتروني">
@@ -56,7 +64,7 @@
       <div id="user-error" class="error"></div>
     </div>
 
-    <!-- ✅ المرحلة الثانية: بيانات المحل -->
+    <!-- بيانات المحل -->
     <div id="store-section" class="hidden">
       <input type="text" id="store-name" placeholder="اسم المحل">
       <select id="store-category">
@@ -85,6 +93,7 @@
       </select>
       <button onclick="submitRegistration()">تسجيل الحساب</button>
       <div id="store-error" class="error"></div>
+      <div id="store-success" class="success"></div>
     </div>
   </div>
 
@@ -92,51 +101,36 @@
     const API = "https://script.google.com/macros/s/AKfycbwcyqY4HfjGUGLAtslLd3m-bXh3pBNz6TsuWpjCXpJpJBzL_ElbaGCi-pjOiISSXKXtkg/exec";
 
     window.onload = () => {
-      fetch(`${API}?action=getCategories`).then(res => res.json()).then(data => {
-        const select = document.getElementById("store-category");
-        data.forEach(item => {
-          select.innerHTML += `<option value="${item["معرف نوع النشاط"]}">${item["اسم نوع النشاط"]}</option>`;
-        });
-      });
+      loadSelect("getCategories", "store-category", "معرف نوع النشاط", "اسم نوع النشاط");
+      loadSelect("getCities", "store-city", "IDالمدينة", "المدينة");
+      loadSelect("getFloors", "store-floor", "الدور", "الدور");
+      loadSelect("getStatuses", "store-status", "حالة المكان", "حالة المكان");
+      loadSelect("getDeliveryOptions", "store-delivery", "التوصيل", "التوصيل");
+    }
 
-      fetch(`${API}?action=getCities`).then(res => res.json()).then(data => {
-        const select = document.getElementById("store-city");
-        data.forEach(item => {
-          select.innerHTML += `<option value="${item["IDالمدينة"]}">${item["المدينة"]}</option>`;
+    function loadSelect(action, elementId, valueKey, textKey) {
+      fetch(`${API}?action=${action}`)
+        .then(res => res.json())
+        .then(data => {
+          const select = document.getElementById(elementId);
+          data.forEach(item => {
+            select.innerHTML += `<option value="${item[valueKey]}">${item[textKey]}</option>`;
+          });
         });
-      });
-
-      fetch(`${API}?action=getStatuses`).then(res => res.json()).then(data => {
-        const select = document.getElementById("store-status");
-        data.forEach(item => {
-          select.innerHTML += `<option value="${item["حالة المكان"]}">${item["حالة المكان"]}</option>`;
-        });
-      });
-
-      fetch(`${API}?action=getFloors`).then(res => res.json()).then(data => {
-        const select = document.getElementById("store-floor");
-        data.forEach(item => {
-          select.innerHTML += `<option value="${item["الدور"]}">${item["الدور"]}</option>`;
-        });
-      });
-
-      fetch(`${API}?action=getDeliveryOptions`).then(res => res.json()).then(data => {
-        const select = document.getElementById("store-delivery");
-        data.forEach(item => {
-          select.innerHTML += `<option value="${item["التوصيل"]}">${item["التوصيل"]}</option>`;
-        });
-      });
     }
 
     function loadRegions() {
       const cityId = document.getElementById("store-city").value;
       const regionSelect = document.getElementById("store-region");
       regionSelect.innerHTML = '<option value="">اختر المنطقة</option>';
-      fetch(`${API}?action=getRegions&cityId=${cityId}`).then(res => res.json()).then(data => {
-        data.forEach(item => {
-          regionSelect.innerHTML += `<option value="${item["IDالمنطقة"]}">${item["المنطقة"]}</option>`;
+
+      fetch(`${API}?action=getRegions&cityId=${cityId}`)
+        .then(res => res.json())
+        .then(data => {
+          data.forEach(item => {
+            regionSelect.innerHTML += `<option value="${item["IDالمنطقة"]}">${item["المنطقة"]}</option>`;
+          });
         });
-      });
     }
 
     function goToStoreSection() {
@@ -155,18 +149,58 @@
 
     function getCurrentLocation() {
       if (!navigator.geolocation) {
-        alert('المتصفح لا يدعم تحديد الموقع.');
+        alert("المتصفح لا يدعم تحديد الموقع");
         return;
       }
       navigator.geolocation.getCurrentPosition(
         position => {
           const coords = `${position.coords.latitude}, ${position.coords.longitude}`;
-          document.getElementById('store-location').value = coords;
+          document.getElementById("store-location").value = coords;
         },
         err => {
-          alert('تعذر الحصول على الموقع. الرجاء السماح للمتصفح بذلك.');
+          alert("تعذر الحصول على الموقع. تأكد من السماح للمتصفح.");
         }
       );
+    }
+
+    function submitRegistration() {
+      const data = {
+        userName: document.getElementById("user-name").value,
+        userEmail: document.getElementById("user-email").value,
+        userPassword: document.getElementById("user-password").value,
+
+        storeName: document.getElementById("store-name").value,
+        categoryId: document.getElementById("store-category").value,
+        cityId: document.getElementById("store-city").value,
+        regionId: document.getElementById("store-region").value,
+        phone: document.getElementById("store-phone").value,
+        whatsapp: document.getElementById("store-whatsapp").value,
+        email: document.getElementById("store-email").value,
+        location: document.getElementById("store-location").value,
+        floor: document.getElementById("store-floor").value,
+        status: document.getElementById("store-status").value,
+        delivery: document.getElementById("store-delivery").value,
+        logoPath: '',
+        logoUrl: '',
+        placeId: '',
+        near: ''
+      };
+
+      fetch(API, {
+        method: "POST",
+        body: JSON.stringify(data)
+      })
+        .then(res => res.json())
+        .then(res => {
+          if (res.status === "success") {
+            document.getElementById("store-success").textContent = "تم إنشاء الحساب بنجاح!";
+          } else {
+            document.getElementById("store-error").textContent = res.message || "حدث خطأ!";
+          }
+        })
+        .catch(err => {
+          document.getElementById("store-error").textContent = "فشل في الإرسال: " + err.message;
+        });
     }
   </script>
 </body>
