@@ -1,119 +1,71 @@
-// 1. دوال المستخدمين
-function registerUser(email, password, name, phone, placeId) {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const sheet = ss.getSheetByName("المستخدمين");
-  
-  // التحقق من عدم تكرار الإيميل
-  const emails = sheet.getRange("A2:A").getValues().flat();
-  if (emails.includes(email)) throw new Error("الإيميل مسجل مسبقًا");
-
-  // تسجيل المستخدم
-  sheet.appendRow([
-    email,
-    Utilities.base64Encode(password),
-    Utilities.getUuid(), // معرف المستخدم
-    placeId,
-    name,
-    phone
-  ]);
-
-  return { success: true, userId: email };
-}
-
-function loginUser(email, password) {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const sheet = ss.getSheetByName("المستخدمين");
-  const data = sheet.getDataRange().getValues();
-  
-  const user = data.find(row => row[0] === email);
-  if (!user) throw new Error("الإيميل غير مسجل");
-  
-  if (user[1] !== Utilities.base64Encode(password)) {
-    throw new Error("كلمة المرور غير صحيحة");
-  }
-  
-  return {
-    userId: user[2],
-    placeId: user[3],
-    name: user[4]
-  };
-}
-
-// 2. إدارة المحلات
-function getPlaceInfo(placeId) {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const sheet = ss.getSheetByName("معلومات المكان");
-  const data = sheet.getDataRange().getValues();
-  
-  const place = data.find(row => row[0] === placeId);
-  if (!place) throw new Error("المكان غير موجود");
-  
-  return {
-    name: place[1],
-    city: place[3],
-    area: place[11],
-    location: place[9],
-    logo: place[13],
-    status: place[15] // حالة المكان
-  };
-}
-
-// 3. نظام الدفع
-function requestPayment(userId, packageName) {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const paymentsSheet = ss.getSheetByName("الدفعات");
-  const packagesSheet = ss.getSheetByName("الباقات");
-  
-  const packageData = packagesSheet.getDataRange().getValues()
-    .find(row => row[0] === packageName);
-  if (!packageData) throw new Error("الباقة غير موجودة");
-  
-  const paymentId = Utilities.getUuid().slice(0, 8);
-  paymentsSheet.appendRow([
-    paymentId,
-    "", // رقم الهاتف (يُملأ لاحقًا)
-    packageData[1], // السعر
-    "", // رقم التحويل
-    "قيد الانتظار",
-    new Date(),
-    userId
-  ]);
-  
-  return {
-    paymentId: paymentId,
-    amount: packageData[1],
-    instructions: `قم بالتحويل لرقم 0123456789 بالمبلغ ${packageData[1]} جنيه`
-  };
-}
-
-// 4. الواجهة البرمجية الرئيسية
-function doPost(e) {
-  try {
-    const request = JSON.parse(e.postData.contents);
-    let response;
-    
-    switch (request.action) {
-      case "register":
-        response = registerUser(request.email, request.password, request.name, request.phone, request.placeId);
-        break;
-      case "login":
-        response = loginUser(request.email, request.password);
-        break;
-      case "getPlaceInfo":
-        response = getPlaceInfo(request.placeId);
-        break;
-      case "requestPayment":
-        response = requestPayment(request.userId, request.packageName);
-        break;
-      default:
-        throw new Error("Action not supported");
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>E-mall - المنصة التجارية</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
+  <style>
+    .store-card {
+      transition: transform 0.3s;
+      border-top: 4px solid;
     }
-    
-    return ContentService.createTextOutput(JSON.stringify(response))
-      .setMimeType(ContentService.MimeType.JSON);
-  } catch (error) {
-    return ContentService.createTextOutput(JSON.stringify({ 
-      error: error.message 
-    })).setMimeType(ContentService.MimeType.JSON);
-  }
-}
+    .status-open { border-color: #28a745; }
+    .status-prayer { border-color: #ffc107; }
+    .status-closed { border-color: #dc3545; }
+  </style>
+</head>
+<body>
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container">
+      <a class="navbar-brand" href="#">E-mall</a>
+      <a href="login.html" class="btn btn-outline-light">تسجيل الدخول</a>
+    </div>
+  </nav>
+
+  <div class="container py-5">
+    <div class="row" id="storesList">
+      <!-- المحلات تُحمّل هنا -->
+    </div>
+  </div>
+
+  <script>
+    async function loadStores() {
+      try {
+        const response = await fetch('URL_GOOGLE_SCRIPT', {
+          method: 'POST',
+          body: JSON.stringify({ action: "getActiveStores" })
+        });
+        const stores = await response.json();
+
+        let html = '';
+        stores.forEach(store => {
+          let statusClass = '';
+          if (store.status === "مفتوح الان") statusClass = "status-open";
+          else if (store.status === "مغلق للصلاة") statusClass = "status-prayer";
+          else statusClass = "status-closed";
+
+          html += `
+            <div class="col-md-4 mb-4">
+              <div class="card store-card ${statusClass}">
+                <div class="card-body">
+                  <h5>${store.name}</h5>
+                  <p>${store.city} - ${store.area}</p>
+                  <span class="badge ${statusClass.replace('status-', 'bg-')}">
+                    ${store.status}
+                  </span>
+                </div>
+              </div>
+            </div>
+          `;
+        });
+        document.getElementById('storesList').innerHTML = html;
+      } catch (error) {
+        console.error("Error loading stores:", error);
+      }
+    }
+
+    window.onload = loadStores;
+  </script>
+</body>
+</html>
