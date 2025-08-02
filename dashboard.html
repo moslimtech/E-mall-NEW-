@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <title>لوحة التحكم</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
+</head>
+<body>
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container">
+      <span class="navbar-brand">لوحة التحكم</span>
+      <button class="btn btn-danger" onclick="logout()">تسجيل الخروج</button>
+    </div>
+  </nav>
+
+  <div class="container py-5">
+    <div class="row">
+      <div class="col-md-3">
+        <div class="card">
+          <div class="card-header">القائمة</div>
+          <div class="list-group list-group-flush">
+            <a href="#" class="list-group-item list-group-item-action">إدارة المحل</a>
+            <a href="#" class="list-group-item list-group-item-action">الإعلانات</a>
+            <a href="#" class="list-group-item list-group-item-action">الإحصائيات</a>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-9">
+        <div class="card">
+          <div class="card-header">مرحبًا <span id="userName"></span></div>
+          <div class="card-body">
+            <h5>إحصائيات سريعة</h5>
+            <!-- محتوى لوحة التحكم -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // التحقق من تسجيل الدخول
+    const user = JSON.parse(localStorage.getItem('user'));
+    if (!user) window.location.href = 'login.html';
+    
+    document.getElementById('userName').textContent = user.name;
+    
+    function logout() {
+      localStorage.removeItem('user');
+      window.location.href = 'index.html';
+    }
+  </script>
+</body>
+</html>
