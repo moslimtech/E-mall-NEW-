@@ -64,6 +64,9 @@
       </select>
       <select id="store-city" onchange="loadRegions()">
         <option value="">اختر المدينة</option>
+        <option value="1">السادات</option>
+        <option value="2">اكتوبر</option>
+        <option value="3">اون لاين</option>
       </select>
       <select id="store-region">
         <option value="">اختر المنطقة</option>
@@ -73,10 +76,26 @@
       <input type="email" id="store-email" placeholder="إيميل المحل">
       <input type="text" id="store-location" placeholder="الموقع الجغرافي (مثال: 30.1,31.2)">
       <button onclick="getCurrentLocation()">📍 تحديد موقعي تلقائيًا</button>
-      <input type="text" id="store-floor" placeholder="الدور (مثال: أول، ثاني...)">
+      <select id="store-floor">
+        <option value="">اختر الدور</option>
+        <option value="بدروم">بدروم</option>
+        <option value="ارضي">ارضي</option>
+        <option value="اول">اول</option>
+        <option value="ثاني">ثاني</option>
+        <option value="ثالث">ثالث</option>
+        <option value="رابع">رابع</option>
+      </select>
       <input type="file" id="logo-file" accept="image/*">
       <select id="store-status">
         <option value="">اختر حالة المكان</option>
+        <option value="مفتوح الان">مفتوح الان</option>
+        <option value="مغلق للصلاة">مغلق للصلاة</option>
+        <option value="مغلق">مغلق</option>
+      </select>
+      <select id="store-delivery">
+        <option value="">يوجد خدمة توصيل؟</option>
+        <option value="يوجد توصيل">يوجد توصيل</option>
+        <option value="لا يوجد توصيل">لا يوجد توصيل</option>
       </select>
       <button onclick="submitRegistration()">تسجيل الحساب</button>
       <div id="store-error" class="error"></div>
@@ -93,29 +112,17 @@
           select.innerHTML += `<option value="${item["معرف نوع النشاط"]}">${item["اسم نوع النشاط"]}</option>`;
         });
       });
-      fetch(`${API}?action=getCities`).then(res => res.json()).then(data => {
-        const select = document.getElementById("store-city");
-        data.forEach(item => {
-          select.innerHTML += `<option value="${item["IDالمدينة"]}">${item["المدينة"]}</option>`;
-        });
-      });
-      fetch(`${API}?action=getStatuses`).then(res => res.json()).then(data => {
-        const select = document.getElementById("store-status");
-        data.forEach(item => {
-          select.innerHTML += `<option value="${item["حالة المكان"]}">${item["حالة المكان"]}</option>`;
-        });
-      });
     }
 
     function loadRegions() {
       const cityId = document.getElementById("store-city").value;
       const regionSelect = document.getElementById("store-region");
       regionSelect.innerHTML = '<option value="">اختر المنطقة</option>';
-      fetch(`${API}?action=getRegions&cityId=${cityId}`).then(res => res.json()).then(data => {
-        data.forEach(item => {
-          regionSelect.innerHTML += `<option value="${item["IDالمنطقة"]}">${item["المنطقة"]}</option>`;
-        });
-      });
+
+      if (cityId == '1') {
+        regionSelect.innerHTML += '<option value="299cfced">الاولي</option>';
+        regionSelect.innerHTML += '<option value="3ea671ca">32</option>';
+      }
     }
 
     function goToStoreSection() {
@@ -146,92 +153,6 @@
           alert('تعذر الحصول على الموقع. الرجاء السماح للمتصفح بذلك.');
         }
       );
-    }
-
-    async function submitRegistration() {
-      const user = {
-        name: document.getElementById("user-name").value.trim(),
-        email: document.getElementById("user-email").value.trim(),
-        password: document.getElementById("user-password").value.trim()
-      };
-
-      const store = {
-        name: document.getElementById("store-name").value.trim(),
-        categoryId: document.getElementById("store-category").value,
-        city: document.getElementById("store-city").value,
-        region: document.getElementById("store-region").value,
-        phone: document.getElementById("store-phone").value.trim(),
-        whatsapp: document.getElementById("store-whatsapp").value.trim(),
-        email: document.getElementById("store-email").value.trim(),
-        location: document.getElementById("store-location").value.trim(),
-        floor: document.getElementById("store-floor").value.trim(),
-        status: document.getElementById("store-status").value
-      };
-
-      const error = document.getElementById("store-error");
-      if (!store.name || !store.categoryId || !store.city || !store.region || !store.phone || !store.email) {
-        error.textContent = "يرجى إدخال كل بيانات المحل الأساسية";
-        return;
-      }
-
-      try {
-        const formData = new FormData();
-        const logoFile = document.getElementById("logo-file").files[0];
-
-        if (logoFile) {
-          const base64 = await toBase64(logoFile);
-          const uploadRes = await fetch(`${API}?action=uploadLogo`, {
-            method: 'POST',
-            body: new URLSearchParams({ base64, filename: logoFile.name })
-          });
-          const logoResult = await uploadRes.json();
-          store.logoPath = logoResult.path;
-          store.logoUrl = logoResult.url;
-        }
-
-        await fetch(`${API}?action=registerUser`, {
-          method: "POST",
-          body: new URLSearchParams({
-            email: user.email,
-            name: user.name,
-            password: user.password,
-            role: "صاحب محل"
-          })
-        });
-
-        await fetch(`${API}?action=addStore`, {
-          method: "POST",
-          body: new URLSearchParams({
-            name: store.name,
-            categoryId: store.categoryId,
-            city: store.city,
-            region: store.region,
-            phone: store.phone,
-            whatsapp: store.whatsapp,
-            email: store.email,
-            location: store.location,
-            floor: store.floor,
-            logoPath: store.logoPath || '',
-            logoUrl: store.logoUrl || '',
-            status: store.status
-          })
-        });
-
-        alert("تم إنشاء الحساب وإضافة المحل بنجاح.");
-        window.location.href = "dashboard.html";
-
-      } catch (err) {
-        error.textContent = err.message || "حدث خطأ أثناء التسجيل";
-      }
-    }
-
-    function toBase64(file) {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = error => reject(error);
-      });
     }
   </script>
 </body>
