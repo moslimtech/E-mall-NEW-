@@ -1,71 +1,92 @@
 <!DOCTYPE html>
 <html dir="rtl" lang="ar">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>E-mall - المنصة التجارية</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
-  <style>
-    .store-card {
-      transition: transform 0.3s;
-      border-top: 4px solid;
-    }
-    .status-open { border-color: #28a745; }
-    .status-prayer { border-color: #ffc107; }
-    .status-closed { border-color: #dc3545; }
-  </style>
+    <meta charset="UTF-8">
+    <title>E-mall - المنصة التجارية</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
+    <style>
+        .store-card {
+            border-top: 4px solid;
+            transition: all 0.3s;
+        }
+        .status-open { border-color: #28a745; }
+        .status-prayer { border-color: #ffc107; }
+        .status-closed { border-color: #dc3545; }
+        .ad-badge { background-color: #4e73df; }
+    </style>
 </head>
 <body>
-  <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-    <div class="container">
-      <a class="navbar-brand" href="#">E-mall</a>
-      <a href="login.html" class="btn btn-outline-light">تسجيل الدخول</a>
-    </div>
-  </nav>
-
-  <div class="container py-5">
-    <div class="row" id="storesList">
-      <!-- المحلات تُحمّل هنا -->
-    </div>
-  </div>
-
-  <script>
-    async function loadStores() {
-      try {
-        const response = await fetch('https://script.google.com/macros/s/AKfycbwcyqY4HfjGUGLAtslLd3m-bXh3pBNz6TsuWpjCXpJpJBzL_ElbaGCi-pjOiISSXKXtkg/exec', {
-          method: 'POST',
-          body: JSON.stringify({ action: "getActiveStores" })
-        });
-        const stores = await response.json();
-
-        let html = '';
-        stores.forEach(store => {
-          let statusClass = '';
-          if (store.status === "مفتوح الان") statusClass = "status-open";
-          else if (store.status === "مغلق للصلاة") statusClass = "status-prayer";
-          else statusClass = "status-closed";
-
-          html += `
-            <div class="col-md-4 mb-4">
-              <div class="card store-card ${statusClass}">
-                <div class="card-body">
-                  <h5>${store.name}</h5>
-                  <p>${store.city} - ${store.area}</p>
-                  <span class="badge ${statusClass.replace('status-', 'bg-')}">
-                    ${store.status}
-                  </span>
-                </div>
-              </div>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="#">E-mall</a>
+            <div>
+                <a href="register.html" class="btn btn-primary me-2">
+                    <i class="fas fa-store-alt"></i> تسجيل محل جديد
+                </a>
+                <a href="login.html" class="btn btn-outline-light">
+                    <i class="fas fa-sign-in-alt"></i> دخول المحلات
+                </a>
             </div>
-          `;
-        });
-        document.getElementById('storesList').innerHTML = html;
-      } catch (error) {
-        console.error("Error loading stores:", error);
-      }
-    }
+        </div>
+    </nav>
 
-    window.onload = loadStores;
-  </script>
+    <div class="container py-5">
+        <div class="row" id="storesContainer">
+            <!-- سيتم تعبئتها بالبيانات -->
+        </div>
+    </div>
+
+    <script>
+        // دالة جلب المحلات مع إعلاناتها
+        async function loadStoresWithAds() {
+            const response = await fetch('URL_GOOGLE_SCRIPT', {
+                method: 'POST',
+                body: JSON.stringify({ action: "getStoresWithAds" })
+            });
+            const data = await response.json();
+            
+            let html = '';
+            data.forEach(store => {
+                // تحديد لون الحالة
+                let statusClass = '';
+                if (store.status === "مفتوح الان") statusClass = "status-open";
+                else if (store.status === "مغلق للصلاة") statusClass = "status-prayer";
+                else statusClass = "status-closed";
+                
+                html += `
+                    <div class="col-md-4 mb-4">
+                        <div class="card store-card h-100 ${statusClass}">
+                            <div class="card-body">
+                                <h5>${store.name}</h5>
+                                <p class="text-muted">
+                                    <i class="fas fa-map-marker-alt"></i> ${store.city} - ${store.area}
+                                </p>
+                                
+                                <!-- عرض الإعلانات -->
+                                <div class="ads-container mt-3">
+                                    ${store.ads.map(ad => `
+                                        <div class="card mb-2">
+                                            <div class="card-body p-2">
+                                                <div class="d-flex justify-content-between">
+                                                    <span class="badge ad-badge">إعلان</span>
+                                                    <small class="text-muted">${ad.date}</small>
+                                                </div>
+                                                <p class="mb-0 mt-1">${ad.title}</p>
+                                            </div>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            document.getElementById('storesContainer').innerHTML = html;
+        }
+
+        // تحميل البيانات عند فتح الصفحة
+        window.onload = loadStoresWithAds;
+    </script>
 </body>
 </html>
