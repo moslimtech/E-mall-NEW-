@@ -12,20 +12,15 @@
         .status-open { border-color: #28a745; }
         .status-prayer { border-color: #ffc107; }
         .status-closed { border-color: #dc3545; }
-        .ad-badge { background-color: #4e73df; }
     </style>
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
         <div class="container">
             <a class="navbar-brand" href="#">E-mall</a>
             <div>
-                <a href="register.html" class="btn btn-primary me-2">
-                    <i class="fas fa-store-alt"></i> تسجيل محل جديد
-                </a>
-                <a href="login.html" class="btn btn-outline-light">
-                    <i class="fas fa-sign-in-alt"></i> دخول المحلات
-                </a>
+                <a href="register.html" class="btn btn-light me-2">تسجيل محل جديد</a>
+                <a href="login.html" class="btn btn-outline-light">تسجيل الدخول</a>
             </div>
         </div>
     </nav>
@@ -37,17 +32,15 @@
     </div>
 
     <script>
-        // دالة جلب المحلات مع إعلاناتها
-        async function loadStoresWithAds() {
+        async function loadStores() {
             const response = await fetch('URL_GOOGLE_SCRIPT', {
                 method: 'POST',
-                body: JSON.stringify({ action: "getStoresWithAds" })
+                body: JSON.stringify({ action: "getPublicStores" })
             });
-            const data = await response.json();
+            const stores = await response.json();
             
             let html = '';
-            data.forEach(store => {
-                // تحديد لون الحالة
+            stores.forEach(store => {
                 let statusClass = '';
                 if (store.status === "مفتوح الان") statusClass = "status-open";
                 else if (store.status === "مغلق للصلاة") statusClass = "status-prayer";
@@ -61,21 +54,9 @@
                                 <p class="text-muted">
                                     <i class="fas fa-map-marker-alt"></i> ${store.city} - ${store.area}
                                 </p>
-                                
-                                <!-- عرض الإعلانات -->
-                                <div class="ads-container mt-3">
-                                    ${store.ads.map(ad => `
-                                        <div class="card mb-2">
-                                            <div class="card-body p-2">
-                                                <div class="d-flex justify-content-between">
-                                                    <span class="badge ad-badge">إعلان</span>
-                                                    <small class="text-muted">${ad.date}</small>
-                                                </div>
-                                                <p class="mb-0 mt-1">${ad.title}</p>
-                                            </div>
-                                        </div>
-                                    `).join('')}
-                                </div>
+                                <a href="store.html?id=${store.id}" class="btn btn-sm btn-primary">
+                                    عرض المحل
+                                </a>
                             </div>
                         </div>
                     </div>
@@ -84,9 +65,8 @@
             
             document.getElementById('storesContainer').innerHTML = html;
         }
-
-        // تحميل البيانات عند فتح الصفحة
-        window.onload = loadStoresWithAds;
+        
+        window.onload = loadStores;
     </script>
 </body>
 </html>
