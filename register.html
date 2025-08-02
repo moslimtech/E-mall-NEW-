@@ -72,8 +72,9 @@
       <input type="text" id="store-whatsapp" placeholder="رابط الواتساب">
       <input type="email" id="store-email" placeholder="إيميل المحل">
       <input type="text" id="store-location" placeholder="الموقع الجغرافي (مثال: 30.1,31.2)">
+      <button onclick="getCurrentLocation()">📍 تحديد موقعي تلقائيًا</button>
       <input type="text" id="store-floor" placeholder="الدور (مثال: أول، ثاني...)">
-      <input type="text" id="store-logo" placeholder="رابط شعار المكان (اختياري)">
+      <input type="file" id="logo-file" accept="image/*">
       <select id="store-status">
         <option value="">اختر حالة المكان</option>
       </select>
@@ -131,7 +132,23 @@
       document.getElementById("store-section").classList.remove("hidden");
     }
 
-    function submitRegistration() {
+    function getCurrentLocation() {
+      if (!navigator.geolocation) {
+        alert('المتصفح لا يدعم تحديد الموقع.');
+        return;
+      }
+      navigator.geolocation.getCurrentPosition(
+        position => {
+          const coords = `${position.coords.latitude}, ${position.coords.longitude}`;
+          document.getElementById('store-location').value = coords;
+        },
+        err => {
+          alert('تعذر الحصول على الموقع. الرجاء السماح للمتصفح بذلك.');
+        }
+      );
+    }
+
+    async function submitRegistration() {
       const user = {
         name: document.getElementById("user-name").value.trim(),
         email: document.getElementById("user-email").value.trim(),
@@ -148,7 +165,6 @@
         email: document.getElementById("store-email").value.trim(),
         location: document.getElementById("store-location").value.trim(),
         floor: document.getElementById("store-floor").value.trim(),
-        logoUrl: document.getElementById("store-logo").value.trim(),
         status: document.getElementById("store-status").value
       };
 
@@ -158,22 +174,32 @@
         return;
       }
 
-      // تسجيل المستخدم أولاً
-      fetch(`${API}?action=registerUser`, {
-        method: "POST",
-        body: new URLSearchParams({
-          email: user.email,
-          name: user.name,
-          password: user.password,
-          role: "صاحب محل"
-        })
-      })
-      .then(res => res.json())
-      .then(result => {
-        if (!result.success) throw new Error(result.message);
+      try {
+        const formData = new FormData();
+        const logoFile = document.getElementById("logo-file").files[0];
 
-        // ثم إضافة المحل
-        return fetch(`${API}?action=addStore`, {
+        if (logoFile) {
+          const base64 = await toBase64(logoFile);
+          const uploadRes = await fetch(`${API}?action=uploadLogo`, {
+            method: 'POST',
+            body: new URLSearchParams({ base64, filename: logoFile.name })
+          });
+          const logoResult = await uploadRes.json();
+          store.logoPath = logoResult.path;
+          store.logoUrl = logoResult.url;
+        }
+
+        await fetch(`${API}?action=registerUser`, {
+          method: "POST",
+          body: new URLSearchParams({
+            email: user.email,
+            name: user.name,
+            password: user.password,
+            role: "صاحب محل"
+          })
+        });
+
+        await fetch(`${API}?action=addStore`, {
           method: "POST",
           body: new URLSearchParams({
             name: store.name,
@@ -185,18 +211,26 @@
             email: store.email,
             location: store.location,
             floor: store.floor,
-            logoUrl: store.logoUrl,
+            logoPath: store.logoPath || '',
+            logoUrl: store.logoUrl || '',
             status: store.status
           })
         });
-      })
-      .then(res => res.json())
-      .then(storeRes => {
+
         alert("تم إنشاء الحساب وإضافة المحل بنجاح.");
         window.location.href = "dashboard.html";
-      })
-      .catch(err => {
+
+      } catch (err) {
         error.textContent = err.message || "حدث خطأ أثناء التسجيل";
+      }
+    }
+
+    function toBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = error => reject(error);
       });
     }
   </script>
