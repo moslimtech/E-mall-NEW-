@@ -1,54 +1,204 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>تسجيل محل جديد - E-mall</title>
-    <link rel="stylesheet" href="css/styles.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>إنشاء حساب</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+    body {
+      font-family: 'Cairo', sans-serif;
+      background-color: #f9f9f9;
+      display: flex;
+      justify-content: center;
+      padding: 20px;
+    }
+    .register-box {
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      width: 100%;
+      max-width: 500px;
+    }
+    input, select, button {
+      width: 100%;
+      padding: 10px;
+      margin: 8px 0;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+    button {
+      background-color: #28a745;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    .hidden {
+      display: none;
+    }
+    .error {
+      color: red;
+      margin-top: 5px;
+    }
+  </style>
 </head>
 <body>
-    <div class="auth-container">
-        <h1>تسجيل محل جديد</h1>
-        <form id="registerForm">
-            <div class="form-group">
-                <label for="storeName">اسم المحل</label>
-                <input type="text" id="storeName" required>
-            </div>
-            <div class="form-group">
-                <label for="email">البريد الإلكتروني</label>
-                <input type="email" id="email" required>
-            </div>
-            <div class="form-group">
-                <label for="password">كلمة المرور</label>
-                <input type="password" id="password" required>
-            </div>
-            <div class="form-group">
-                <label for="phone">رقم الهاتف</label>
-                <input type="tel" id="phone" required>
-            </div>
-            <button type="submit">تسجيل</button>
-        </form>
-        <p>لديك حساب بالفعل؟ <a href="login.html">سجل دخول</a></p>
+  <div class="register-box">
+    <h2>إنشاء حساب جديد</h2>
+
+    <!-- ✅ المرحلة الأولى: بيانات المستخدم -->
+    <div id="user-section">
+      <input type="text" id="user-name" placeholder="الاسم بالكامل">
+      <input type="email" id="user-email" placeholder="البريد الإلكتروني">
+      <input type="password" id="user-password" placeholder="كلمة المرور">
+      <button onclick="goToStoreSection()">التالي</button>
+      <div id="user-error" class="error"></div>
     </div>
 
-    <script src="js/main.js"></script>
-    <script>
-        document.getElementById('registerForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const storeData = {
-                name: document.getElementById('storeName').value,
-                email: document.getElementById('email').value,
-                password: document.getElementById('password').value,
-                phone: document.getElementById('phone').value
-            };
-            
-            google.script.run.withSuccessHandler(function() {
-                alert('تم التسجيل بنجاح! يرجى تسجيل الدخول.');
-                window.location.href = 'login.html';
-            }).withFailureHandler(function(error) {
-                alert(error.message);
-            }).registerNewStore(storeData);
+    <!-- ✅ المرحلة الثانية: بيانات المحل -->
+    <div id="store-section" class="hidden">
+      <input type="text" id="store-name" placeholder="اسم المحل">
+      <select id="store-category">
+        <option value="">اختر نوع النشاط</option>
+      </select>
+      <select id="store-city" onchange="loadRegions()">
+        <option value="">اختر المدينة</option>
+      </select>
+      <select id="store-region">
+        <option value="">اختر المنطقة</option>
+      </select>
+      <input type="text" id="store-phone" placeholder="رقم التواصل">
+      <input type="text" id="store-whatsapp" placeholder="رابط الواتساب">
+      <input type="email" id="store-email" placeholder="إيميل المحل">
+      <input type="text" id="store-location" placeholder="الموقع الجغرافي (مثال: 30.1,31.2)">
+      <input type="text" id="store-floor" placeholder="الدور (مثال: أول، ثاني...)">
+      <input type="text" id="store-logo" placeholder="رابط شعار المكان (اختياري)">
+      <select id="store-status">
+        <option value="">اختر حالة المكان</option>
+      </select>
+      <button onclick="submitRegistration()">تسجيل الحساب</button>
+      <div id="store-error" class="error"></div>
+    </div>
+  </div>
+
+  <script>
+    const API = "https://script.google.com/macros/s/AKfycbwcyqY4HfjGUGLAtslLd3m-bXh3pBNz6TsuWpjCXpJpJBzL_ElbaGCi-pjOiISSXKXtkg/exec";
+
+    window.onload = () => {
+      fetch(`${API}?action=getCategories`).then(res => res.json()).then(data => {
+        const select = document.getElementById("store-category");
+        data.forEach(item => {
+          select.innerHTML += `<option value="${item["معرف نوع النشاط"]}">${item["اسم نوع النشاط"]}</option>`;
         });
-    </script>
+      });
+      fetch(`${API}?action=getCities`).then(res => res.json()).then(data => {
+        const select = document.getElementById("store-city");
+        data.forEach(item => {
+          select.innerHTML += `<option value="${item["IDالمدينة"]}">${item["المدينة"]}</option>`;
+        });
+      });
+      fetch(`${API}?action=getStatuses`).then(res => res.json()).then(data => {
+        const select = document.getElementById("store-status");
+        data.forEach(item => {
+          select.innerHTML += `<option value="${item["حالة المكان"]}">${item["حالة المكان"]}</option>`;
+        });
+      });
+    }
+
+    function loadRegions() {
+      const cityId = document.getElementById("store-city").value;
+      const regionSelect = document.getElementById("store-region");
+      regionSelect.innerHTML = '<option value="">اختر المنطقة</option>';
+      fetch(`${API}?action=getRegions&cityId=${cityId}`).then(res => res.json()).then(data => {
+        data.forEach(item => {
+          regionSelect.innerHTML += `<option value="${item["IDالمنطقة"]}">${item["المنطقة"]}</option>`;
+        });
+      });
+    }
+
+    function goToStoreSection() {
+      const name = document.getElementById("user-name").value.trim();
+      const email = document.getElementById("user-email").value.trim();
+      const pass = document.getElementById("user-password").value.trim();
+      const error = document.getElementById("user-error");
+      if (!name || !email || !pass) {
+        error.textContent = "يرجى إدخال كل البيانات";
+        return;
+      }
+      error.textContent = "";
+      document.getElementById("user-section").classList.add("hidden");
+      document.getElementById("store-section").classList.remove("hidden");
+    }
+
+    function submitRegistration() {
+      const user = {
+        name: document.getElementById("user-name").value.trim(),
+        email: document.getElementById("user-email").value.trim(),
+        password: document.getElementById("user-password").value.trim()
+      };
+
+      const store = {
+        name: document.getElementById("store-name").value.trim(),
+        categoryId: document.getElementById("store-category").value,
+        city: document.getElementById("store-city").value,
+        region: document.getElementById("store-region").value,
+        phone: document.getElementById("store-phone").value.trim(),
+        whatsapp: document.getElementById("store-whatsapp").value.trim(),
+        email: document.getElementById("store-email").value.trim(),
+        location: document.getElementById("store-location").value.trim(),
+        floor: document.getElementById("store-floor").value.trim(),
+        logoUrl: document.getElementById("store-logo").value.trim(),
+        status: document.getElementById("store-status").value
+      };
+
+      const error = document.getElementById("store-error");
+      if (!store.name || !store.categoryId || !store.city || !store.region || !store.phone || !store.email) {
+        error.textContent = "يرجى إدخال كل بيانات المحل الأساسية";
+        return;
+      }
+
+      // تسجيل المستخدم أولاً
+      fetch(`${API}?action=registerUser`, {
+        method: "POST",
+        body: new URLSearchParams({
+          email: user.email,
+          name: user.name,
+          password: user.password,
+          role: "صاحب محل"
+        })
+      })
+      .then(res => res.json())
+      .then(result => {
+        if (!result.success) throw new Error(result.message);
+
+        // ثم إضافة المحل
+        return fetch(`${API}?action=addStore`, {
+          method: "POST",
+          body: new URLSearchParams({
+            name: store.name,
+            categoryId: store.categoryId,
+            city: store.city,
+            region: store.region,
+            phone: store.phone,
+            whatsapp: store.whatsapp,
+            email: store.email,
+            location: store.location,
+            floor: store.floor,
+            logoUrl: store.logoUrl,
+            status: store.status
+          })
+        });
+      })
+      .then(res => res.json())
+      .then(storeRes => {
+        alert("تم إنشاء الحساب وإضافة المحل بنجاح.");
+        window.location.href = "dashboard.html";
+      })
+      .catch(err => {
+        error.textContent = err.message || "حدث خطأ أثناء التسجيل";
+      });
+    }
+  </script>
 </body>
 </html>
