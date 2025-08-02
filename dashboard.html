@@ -1,65 +1,59 @@
 <!DOCTYPE html>
-<html dir="rtl">
+<html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>لوحة التحكم</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة التحكم - E-mall</title>
+    <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
-    <div class="container py-5">
-        <div class="row">
-            <div class="col-md-3">
-                <div class="card">
-                    <div class="card-header">باقتي</div>
-                    <div class="card-body" id="packageInfo">
-                        <!-- سيتم تعبئتها بالبيانات -->
-                    </div>
-                </div>
+    <header>
+        <nav>
+            <div class="logo">E-mall</div>
+            <ul>
+                <li><a href="#" class="active">لوحة التحكم</a></li>
+                <li><a href="store.html">إدارة المحل</a></li>
+                <li><a href="#" id="logoutBtn">تسجيل الخروج</a></li>
+            </ul>
+        </nav>
+    </header>
+    
+    <main class="dashboard">
+        <section class="stats">
+            <div class="stat-card">
+                <h3>عدد الزيارات</h3>
+                <p id="visitsCount">0</p>
             </div>
-            
-            <div class="col-md-9">
-                <div class="card">
-                    <div class="card-header">إعلاناتي</div>
-                    <div class="card-body" id="adsContainer">
-                        <!-- سيتم تعبئتها بالبيانات -->
-                    </div>
-                </div>
+            <div class="stat-card">
+                <h3>الإعلانات النشطة</h3>
+                <p id="activeAdsCount">0</p>
             </div>
-        </div>
-    </div>
+        </section>
+        
+        <section class="actions">
+            <button onclick="location.href='store.html'">إدارة المحل</button>
+            <button onclick="showAdForm()">إضافة إعلان جديد</button>
+        </section>
+    </main>
 
+    <script src="js/main.js"></script>
     <script>
-        const user = JSON.parse(localStorage.getItem('user'));
-        if (!user) window.location.href = 'login.html';
-        
-        async function loadDashboard() {
-            // جلب الإعلانات
-            const adsResponse = await fetch('URL_GOOGLE_SCRIPT', {
-                method: 'POST',
-                body: JSON.stringify({
-                    action: "getUserAds",
-                    userId: user.userId
-                })
-            });
-            const ads = await adsResponse.json();
-            
-            // عرض الإعلانات
-            let adsHtml = '';
-            ads.forEach(ad => {
-                adsHtml += `
-                    <div class="card mb-2">
-                        <div class="card-body">
-                            <h6>${ad.title}</h6>
-                            <p>${ad.date}</p>
-                        </div>
-                    </div>
-                `;
-            });
-            
-            document.getElementById('adsContainer').innerHTML = adsHtml;
+        // جلب إحصائيات المستخدم
+        google.script.run.withSuccessHandler(function(stats) {
+            document.getElementById('visitsCount').textContent = stats.visits;
+            document.getElementById('activeAdsCount').textContent = stats.activeAds;
+        }).getUserStats();
+
+        // تسجيل الخروج
+        document.getElementById('logoutBtn').addEventListener('click', function() {
+            google.script.run.logoutUser();
+            window.location.href = 'index.html';
+        });
+
+        function showAdForm() {
+            // عرض نموذج إضافة إعلان
+            alert('سيتم عرض نموذج إضافة إعلان هنا');
         }
-        
-        window.onload = loadDashboard;
     </script>
 </body>
 </html>
