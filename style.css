@@ -1,0 +1,24 @@
+/* تنسيقات عامة */
+body {
+  font-family: 'Tajawal', sans-serif;
+  background-color: #f8f9fa;
+}
+
+/* تنسيقات البطاقات */
+.store-card {
+  transition: all 0.3s ease;
+  margin-bottom: 20px;
+}
+.store-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+}
+
+/* ألوان الحالة */
+.status-open { border-color: #28a745; }
+.status-prayer { border-color: #ffc107; }
+.status-closed { border-color: #dc3545; }
+
+.bg-open { background-color: #28a745; }
+.bg-prayer { background-color: #ffc107; }
+.bg-closed { background-color: #dc3545; }
