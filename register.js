@@ -1,5 +1,3 @@
-// register.js
-
 const API = "https://script.google.com/macros/s/AKfycbwcyqY4HfjGUGLAtslLd3m-bXh3pBNz6TsuWpjCXpJpJBzL_ElbaGCi-pjOiISSXKXtkg/exec";
 
 window.onload = () => {
@@ -76,66 +74,60 @@ function submitRegistration() {
     return;
   }
 
-  const reader = new FileReader();
-  reader.onloadend = function () {
-    const base64Image = reader.result.split(",")[1];
+  const formData = new FormData();
+  formData.append("image", file);
+  formData.append("storeId", storeId);
 
-    fetch(API, {
-      method: "POST",
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({
-        image: base64Image,
-        storeId: storeId
-      })
-    })
-      .then(res => res.json())
-      .then(imgRes => {
-        if (imgRes.status === "success") {
-          const data = {
-            userName: document.getElementById("user-name").value,
-            userEmail: document.getElementById("user-email").value,
-            userPassword: document.getElementById("user-password").value,
+  fetch(API, {
+    method: "POST",
+    body: formData
+  })
+    .then(res => res.json())
+    .then(imgRes => {
+      if (imgRes.status === "success") {
+        const data = {
+          userName: document.getElementById("user-name").value,
+          userEmail: document.getElementById("user-email").value,
+          userPassword: document.getElementById("user-password").value,
 
-            storeName: document.getElementById("store-name").value,
-            categoryId: document.getElementById("store-category").value,
-            cityId: document.getElementById("store-city").value,
-            regionId: document.getElementById("store-region").value,
-            phone: document.getElementById("store-phone").value,
-            whatsapp: document.getElementById("store-whatsapp").value,
-            email: document.getElementById("store-email").value,
-            location: document.getElementById("store-location").value,
-            floor: document.getElementById("store-floor").value,
-            status: document.getElementById("store-status").value,
-            delivery: document.getElementById("store-delivery").value,
-            logoPath: imgRes.path,
-            logoUrl: "https://drive.google.com/uc?id=" + imgRes.fileId,
-            placeId: storeId,
-            near: ""
-          };
+          storeName: document.getElementById("store-name").value,
+          categoryId: document.getElementById("store-category").value,
+          cityId: document.getElementById("store-city").value,
+          regionId: document.getElementById("store-region").value,
+          phone: document.getElementById("store-phone").value,
+          whatsapp: document.getElementById("store-whatsapp").value,
+          email: document.getElementById("store-email").value,
+          location: document.getElementById("store-location").value,
+          floor: document.getElementById("store-floor").value,
+          status: document.getElementById("store-status").value,
+          delivery: document.getElementById("store-delivery").value,
+          logoPath: imgRes.path,
+          logoUrl: "https://drive.google.com/uc?id=" + imgRes.fileId,
+          placeId: storeId,
+          near: ""
+        };
 
-          fetch(API, {
-            method: "POST",
-            body: JSON.stringify(data)
+        fetch(API, {
+          method: "POST",
+          body: JSON.stringify(data)
+        })
+          .then(res => res.json())
+          .then(res => {
+            if (res.status === "success") {
+              storeSuccess.textContent = "✅ تم إنشاء الحساب بنجاح!";
+            } else {
+              storeError.textContent = res.message || "حدث خطأ أثناء الحفظ!";
+            }
           })
-            .then(res => res.json())
-            .then(res => {
-              if (res.status === "success") {
-                storeSuccess.textContent = "✅ تم إنشاء الحساب بنجاح!";
-              } else {
-                storeError.textContent = res.message || "حدث خطأ أثناء الحفظ!";
-              }
-            })
-            .catch(err => {
-              storeError.textContent = "❌ فشل في الحفظ: " + err.message;
-            });
+          .catch(err => {
+            storeError.textContent = "❌ فشل في الحفظ: " + err.message;
+          });
 
-        } else {
-          storeError.textContent = "❌ فشل رفع صورة الشعار";
-        }
-      })
-      .catch(err => {
-        storeError.textContent = "❌ فشل رفع الصورة: " + err.message;
-      });
-  };
-  reader.readAsDataURL(file);
+      } else {
+        storeError.textContent = "❌ فشل رفع صورة الشعار";
+      }
+    })
+    .catch(err => {
+      storeError.textContent = "❌ فشل رفع الصورة: " + err.message;
+    });
 }
