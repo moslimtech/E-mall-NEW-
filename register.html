@@ -49,6 +49,10 @@
       color: green;
       margin-top: 10px;
     }
+    .loading {
+      color: orange;
+      margin-top: 10px;
+    }
   </style>
 </head>
 <body>
@@ -79,9 +83,13 @@
       <input type="file" id="logo-file" accept="image/*">
       <select id="store-status"><option value="">اختر حالة المكان</option></select>
       <select id="store-delivery"><option value="">يوجد خدمة توصيل؟</option></select>
-      <button onclick="submitRegistration()">تسجيل الحساب</button>
-      <div id="store-error" class="error"></div>
+
+      <!-- الرسائل -->
+      <div id="store-loading" class="loading"></div>
       <div id="store-success" class="success"></div>
+      <div id="store-error" class="error"></div>
+
+      <button onclick="submitRegistration()">تسجيل الحساب</button>
     </div>
   </div>
 
@@ -94,7 +102,7 @@
       loadSelect("getFloors", "store-floor", "الدور", "الدور");
       loadSelect("getStatuses", "store-status", "حالة المكان", "حالة المكان");
       loadSelect("getDeliveryOptions", "store-delivery", "التوصيل", "التوصيل");
-    }
+    };
 
     function loadSelect(action, elementId, valueKey, textKey) {
       fetch(`${API}?action=${action}`)
@@ -147,68 +155,81 @@
           const coords = `${position.coords.latitude},${position.coords.longitude}`;
           document.getElementById("store-location").value = coords;
         },
-        () => alert("تعذر تحديد الموقع. تأكد من السماح للموقع.")
+        () => alert("تعذر تحديد الموقع. تأكد من السماح.")
       );
     }
 
     async function submitRegistration() {
       const storeId = crypto.randomUUID();
       const fileInput = document.getElementById("logo-file");
+      const storeLoading = document.getElementById("store-loading");
+      const storeSuccess = document.getElementById("store-success");
+      const storeError = document.getElementById("store-error");
+
+      // عرض رسالة "جاري التسجيل"
+      storeLoading.textContent = "⏳ جاري التسجيل، برجاء الانتظار...";
+      storeSuccess.textContent = "";
+      storeError.textContent = "";
+
       let logoPath = "", logoUrl = "";
 
-      if (fileInput.files.length > 0) {
-        const file = fileInput.files[0];
-        const base64 = await toBase64(file);
-        const upload = await fetch(API, {
+      try {
+        if (fileInput.files.length > 0) {
+          const file = fileInput.files[0];
+          const base64 = await toBase64(file);
+
+          const upload = await fetch(API, {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: new URLSearchParams({
+              image: base64,
+              storeId: storeId
+            })
+          }).then(res => res.json());
+
+          if (upload.status === "success") {
+            logoPath = upload.path;
+            logoUrl = "https://drive.google.com/uc?id=" + upload.fileId;
+          } else {
+            throw new Error("فشل رفع صورة الشعار");
+          }
+        }
+
+        const data = {
+          userName: document.getElementById("user-name").value,
+          userEmail: document.getElementById("user-email").value,
+          userPassword: document.getElementById("user-password").value,
+          storeName: document.getElementById("store-name").value,
+          categoryId: document.getElementById("store-category").value,
+          cityId: document.getElementById("store-city").value,
+          regionId: document.getElementById("store-region").value,
+          phone: document.getElementById("store-phone").value,
+          whatsapp: document.getElementById("store-whatsapp").value,
+          email: document.getElementById("store-email").value,
+          location: document.getElementById("store-location").value,
+          floor: document.getElementById("store-floor").value,
+          status: document.getElementById("store-status").value,
+          delivery: document.getElementById("store-delivery").value,
+          logoPath,
+          logoUrl,
+          placeId: storeId
+        };
+
+        const saveRes = await fetch(API, {
           method: "POST",
-          headers: { "Content-Type": "application/x-www-form-urlencoded" },
-          body: new URLSearchParams({
-            image: base64,
-            storeId: storeId
-          })
+          body: JSON.stringify(data)
         }).then(res => res.json());
 
-        if (upload.status === "success") {
-          logoPath = upload.path;
-          logoUrl = "https://drive.google.com/uc?id=" + upload.fileId;
-        }
-      }
-
-      const data = {
-        userName: document.getElementById("user-name").value,
-        userEmail: document.getElementById("user-email").value,
-        userPassword: document.getElementById("user-password").value,
-        storeName: document.getElementById("store-name").value,
-        categoryId: document.getElementById("store-category").value,
-        cityId: document.getElementById("store-city").value,
-        regionId: document.getElementById("store-region").value,
-        phone: document.getElementById("store-phone").value,
-        whatsapp: document.getElementById("store-whatsapp").value,
-        email: document.getElementById("store-email").value,
-        location: document.getElementById("store-location").value,
-        floor: document.getElementById("store-floor").value,
-        status: document.getElementById("store-status").value,
-        delivery: document.getElementById("store-delivery").value,
-        logoPath: logoPath,
-        logoUrl: logoUrl,
-        placeId: storeId
-      };
-
-      fetch(API, {
-        method: "POST",
-        body: JSON.stringify(data)
-      })
-      .then(res => res.json())
-      .then(res => {
-        if (res.status === "success") {
-          document.getElementById("store-success").textContent = "✅ تم إنشاء الحساب بنجاح!";
+        if (saveRes.status === "success") {
+          storeSuccess.textContent = "✅ تم إنشاء الحساب بنجاح!";
         } else {
-          document.getElementById("store-error").textContent = res.message || "❌ حدث خطأ!";
+          storeError.textContent = saveRes.message || "❌ حدث خطأ!";
         }
-      })
-      .catch(err => {
-        document.getElementById("store-error").textContent = "❌ فشل في الإرسال: " + err.message;
-      });
+      } catch (err) {
+        storeError.textContent = "❌ فشل في الإرسال: " + err.message;
+      } finally {
+        storeLoading.textContent = ""; // إخفاء الرسالة
+      }
     }
 
     function toBase64(file) {
